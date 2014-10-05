@@ -1,0 +1,184 @@
+EMU8086 GENERATED LISTING. MACHINE CODE <- SOURCE.
+ 
+therm.com -- emu8086 assembler version: 4.08  
+ 
+[ 11/15/2012  --  10:00:52 PM ] 
+ 
+===================================================================================================
+[LINE]     LOC: MACHINE CODE                          SOURCE
+===================================================================================================
+ 
+[   1]        :                                       ;  ID: Jim McKenna, CIS 253 Section 1, Fall
+[   2]        :                                       ;
+[   3]        :                                       ;  PURPOSE:
+[   4]        :                                       ;   Interact with the thermometer and LED display to emulate a thermostat
+[   5]        :                                       ;   controller.
+[   6]        :                                       ;
+[   7]        :                                       ;  DESIGN:
+[   8]        :                                       ;   1. Display the temp and current info.
+[   9]        :                                       ;   2. Use proc to get min/max temp from user.
+[  10]        :                                       ;   3. Enter loop, getting temp from thermometer and displaying it to the
+[  11]        :                                       ;      LED display.
+[  12]        :                                       ;   4. While in loop, check if temp is above or below min/max.  If so,
+[  13]        :                                       ;      turn heater on/off as need be.
+[  14]        :                                       ;   5. Loop.  For.  Ever.
+[  15]        :                                       ;
+[  16]        :                                       ;   (See inline comments.)
+[  17]        :                                       
+[  18]        :                                       include 'emu8086.inc'
+[  19]        :                                       
+[  20]        :                                       #start=thermometer.exe#
+[  21]        :                                       #start=led_display.exe#
+[  22]        :                                       
+[  23]        :                                       org 100h
+[  24]        :                                       
+[  25]    0100: BA 00 01                              mov dx, 0100h                   ; to clear zero flag
+[  26]        :                                       
+[  27]    0103: E4 7D                                 in al, 125                      ; grab the temp
+[  28]    0105: E6 C7                                 out 199, al                     ; send temp to lcd
+[  29]        :                                       
+[  30]    0107: 50 56 EB 16 54 68 65 20 63 75 72 72   print 'The current temp is: '   ; print out the console display
+                65 6E 74 20 74 65 6D 70 20 69 73 3A 
+                20 00 BE 0B 01 2E 8A 04 3C 00 74 07 
+                46 B4 0E CD 10 EB F2 5E 58          
+[  31]    0134: B4 00                                 mov ah, 00h
+[  32]    0136: E8 11 03                              call print_num
+[  33]    0139: 50 56 EB 03 0D 0A 00 BE 3D 01 2E 8A   printn
+                04 3C 00 74 07 46 B4 0E CD 10 EB F2 
+                5E 58                               
+[  34]    0153: 50 56 EB 03 0D 0A 00 BE 57 01 2E 8A   printn
+                04 3C 00 74 07 46 B4 0E CD 10 EB F2 
+                5E 58                               
+[  35]    016D: 50 56 EB 0D 4D 69 6E 20 74 65 6D 70   printn 'Min temp: '
+                3A 20 0D 0A 00 BE 71 01 2E 8A 04 3C 
+                00 74 07 46 B4 0E CD 10 EB F2 5E 58 
+                                                    
+[  36]    0191: 50 56 EB 0D 4D 61 78 20 74 65 6D 70   printn 'Max temp: '
+                3A 20 0D 0A 00 BE 95 01 2E 8A 04 3C 
+                00 74 07 46 B4 0E CD 10 EB F2 5E 58 
+                                                    
+[  37]    01B5: E8 4D 01                              call keyhit                     ; call keyhit to get min/max
+[  38]    01B8: 50 56 EB 03 0D 0A 00 BE BC 01 2E 8A   printn
+                04 3C 00 74 07 46 B4 0E CD 10 EB F2 
+                5E 58                               
+[  39]    01D2: 50 56 EB 03 0D 0A 00 BE D6 01 2E 8A   printn
+                04 3C 00 74 07 46 B4 0E CD 10 EB F2 
+                5E 58                               
+[  40]    01EC: 50 56 EB 12 54 68 65 20 68 65 61 74   printn 'The heater is: '
+                65 72 20 69 73 3A 20 0D 0A 00 BE F0 
+                01 2E 8A 04 3C 00 74 07 46 B4 0E CD 
+                10 EB F2 5E 58                      
+[  41]    0215: 50 56 EB 03 0D 0A 00 BE 19 02 2E 8A   printn
+                04 3C 00 74 07 46 B4 0E CD 10 EB F2 
+                5E 58                               
+[  42]    022F: 50 56 EB 2B 2A 20 50 72 65 73 73 20   print  '* Press any key to set min and max temps *'
+                61 6E 79 20 6B 65 79 20 74 6F 20 73 
+                65 74 20 6D 69 6E 20 61 6E 64 20 6D 
+                61 78 20 74 65 6D 70 73 20 2A 00 BE 
+                33 02 2E 8A 04 3C 00 74 07 46 B4 0E 
+                CD 10 EB F2 5E 58                   
+[  43]        :                                       
+[  44]    0271:                                       start:
+[  45]        :                                       
+[  46]    0271: E4 7D                                 in al, 125                  ; get temp --> into al
+[  47]    0273: E6 C7                                 out 199, al                 ; place temp (al) into lcd
+[  48]        :                                       
+[  49]    0275: 50 53 52 B4 02 B6 00 B2 15 B7 00 CD   gotoxy 21, 0                ; go to spot on screen
+                10 5A 5B 58                         
+[  50]    0285: B4 00                                 mov ah, 00h                 ; make sure ah is zeroed
+[  51]    0287: E8 C0 01                              call print_num              ; print temp (ax)
+[  52]    028A: B4 01                                 mov ah, 01h                 ; 01h in ax for interrupt
+[  53]        :                                       
+[  54]    028C: 3A F2                                 cmp dh, dl                  ; clear zero flag - no clear call like CLC... :(
+[  55]        :                                       
+[  56]    028E: CD 16                                 int 16h                     ; check for key press
+[  57]    0290: 74 03                                 jz comp                     ; no press, carry on
+[  58]    0292: E8 70 00                              call keyhit                 ; else, call keypress and get new temps
+[  59]        :                                       
+[  60]    0295:                                       comp:
+[  61]    0295: 3A C3                                 cmp al, bl                  ; compare temp and low
+[  62]    0297: 7E 06                                 jle low                     ; if below, jump to low
+[  63]        :                                       
+[  64]    0299: 3A C7                                 cmp al, bh                  ; compare temp and high
+[  65]    029B: 7D 33                                 jge high                    ; if too high, jump to high
+[  66]    029D: 7C 62                                 jl ok                       ; else, loop
+[  67]        :                                       
+[  68]    029F:                                       low:
+[  69]    029F: B0 01                                 mov al, 01h                 ; set al to "on"
+[  70]    02A1: E6 7F                                 out 127, al                 ; turn heater "on".
+[  71]    02A3: 50 53 52 B4 02 B6 05 B2 0F B7 00 CD   gotoxy 15, 5                ; go to heater line
+                10 5A 5B 58                         
+[  72]    02B3: 50 56 EB 04 4F 6E 20 00 BE B7 02 2E   print 'On '                 ; inform that it is on
+                8A 04 3C 00 74 07 46 B4 0E CD 10 EB 
+                F2 5E 58                            
+[  73]    02CE: EB 31                                 jmp ok                      ; back to the loop...
+[  74]        :                                       
+[  75]    02D0:                                       high:
+[  76]    02D0: B0 00                                 mov al, 00h                 ; same concept as low
+[  77]    02D2: E6 7F                                 out 127, al                 ;
+[  78]    02D4: 50 53 52 B4 02 B6 05 B2 0F B7 00 CD   gotoxy 15, 5                ;
+                10 5A 5B 58                         
+[  79]    02E4: 50 56 EB 04 4F 66 66 00 BE E8 02 2E   print 'Off'                 ;
+                8A 04 3C 00 74 07 46 B4 0E CD 10 EB 
+                F2 5E 58                            
+[  80]    02FF: EB 00                                 jmp ok                      ;
+[  81]        :                                       
+[  82]    0301:                                       ok:
+[  83]    0301: E9 6D FF                              jmp start                   ; endless loop.
+[  84]        :                                       
+[  85]    0304: C3                                    ret
+[  86]        :                                       
+[  87]        :                                       ;-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
+[  88]        :                                       
+[  89]    0305:                                       keyhit proc
+[  90]        :                                       
+[  91]    0305: 50 53 52 B4 02 B6 02 B2 0A B7 00 CD   gotoxy 10, 2                ; go to low spot
+                10 5A 5B 58                         
+[  92]    0315: E8 1B 00                              call scan_num               ; scan for number
+[  93]    0318: 8A D9                                 mov bl, cl                  ; mov number into low temp register
+[  94]        :                                       
+[  95]    031A: 50 53 52 B4 02 B6 03 B2 0A B7 00 CD   gotoxy 10, 3                ; same concept as above
+                10 5A 5B 58                         
+[  96]    032A: E8 06 00                              call scan_num               ;
+[  97]    032D: 8A F9                                 mov bh, cl                  ;
+[  98]        :                                       
+[  99]    032F: C3                                    ret
+[ 100]        :                                       keyhit endp
+[ 101]        :                                       
+[ 102]    0330: E9 C3 00 52 50 56 B9 00 00 2E C6 06   define_scan_num
+                F3 03 00 B4 00 CD 16 B4 0E CD 10 3C 
+                2D 74 69 3C 0D 75 03 E9 93 00 3C 08 
+                75 1E BA 00 00 8B C1 2E F7 36 F4 03 
+                8B C8 50 B0 20 B4 0E CD 10 58 50 B0 
+                08 B4 0E CD 10 58 EB CB 3C 30 73 02 
+                EB 04 3C 39 76 1A 50 B0 08 B4 0E CD 
+                10 58 50 B0 20 B4 0E CD 10 58 50 B0 
+                08 B4 0E CD 10 58 EB A7 50 8B C1 2E 
+                F7 26 F4 03 8B C8 58 83 FA 00 75 19 
+                2C 30 B4 00 8B D1 03 C8 72 0A EB 8B 
+                2E C6 06 F3 03 01 EB 83 8B CA BA 00 
+                00 8B C1 2E F7 36 F4 03 8B C8 50 B0 
+                08 B4 0E CD 10 58 50 B0 20 B4 0E CD 
+                10 58 50 B0 08 B4 0E CD 10 58 E9 5A 
+                FF 2E 80 3E F3 03 00 74 02 F7 D9 5E 
+                58 5A C3 00 0A 00                   
+[ 103]    03F6: EB 50 50 53 51 52 B9 01 00 BB 10 27   define_print_num_uns
+                3D 00 00 74 32 83 FB 00 74 35 83 F9 
+                00 74 04 3B C3 72 14 B9 00 00 BA 00 
+                00 F7 F3 04 30 50 8A C0 B4 0E CD 10 
+                58 8B C2 50 BA 00 00 8B C3 2E F7 36 
+                46 04 8B D8 58 EB CE 50 B0 30 B4 0E 
+                CD 10 58 5A 59 5B 58 C3 0A 00       
+[ 104]    0448: EB 26 52 50 3D 00 00 75 0A 50 B0 30   define_print_num
+                B4 0E CD 10 58 EB 12 3D 00 00 79 0A 
+                F7 D8 50 B0 2D B4 0E CD 10 58 E8 8B 
+                FF 58 5A C3                         
+[ 105]        :                                       
+ 
+===================================================================================================
+ 
+
+
+
+
+===================================================================================================
